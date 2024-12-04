@@ -30,22 +30,17 @@ void sendmsg(char *user, char *target, char *msg) {
     int serverFIFO;
     struct message msgStruct;
 
-    // Fill the message struct with source, target, and msg.
     strcpy(msgStruct.source, user);
     strcpy(msgStruct.target, target);
     strcpy(msgStruct.msg, msg);
 
-    // Open the server's FIFO to send the message
     serverFIFO = open("serverFIFO", O_WRONLY);
     if (serverFIFO == -1) {
         perror("Failed to open serverFIFO");
         exit(1);
     }
 
-    // Write the message struct to the server FIFO
     write(serverFIFO, &msgStruct, sizeof(msgStruct));
-
-    // Close the server FIFO after sending the message
     close(serverFIFO);
 }
 
@@ -54,24 +49,19 @@ void* messageListener(void *arg) {
     int userFIFO;
     struct message incomingMsg;
 
-    // Open the user's FIFO for reading incoming messages
     userFIFO = open(uName, O_RDONLY);
     if (userFIFO == -1) {
         perror("Failed to open user FIFO");
         pthread_exit((void*)1);
     }
 
-    // Infinite loop to listen for incoming messages
     while (1) {
-        // Read the message from the FIFO
         int bytesRead = read(userFIFO, &incomingMsg, sizeof(incomingMsg));
         if (bytesRead > 0) {
-            // Print the incoming message
             printf("Incoming message from %s: %s\n", incomingMsg.source, incomingMsg.msg);
         }
     }
 
-    // Close the FIFO and exit the thread
     close(userFIFO);
     pthread_exit((void*)0);
 }
@@ -109,9 +99,6 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-
-
-
     while (1) {
 
 	fprintf(stderr,"rsh>");
@@ -133,32 +120,20 @@ int main(int argc, char **argv) {
 	}
 
 	if (strcmp(cmd,"sendmsg")==0) {
-		// TODO: Create the target user and
-		// the message string and call the sendmsg function
-
-		// NOTE: The message itself can contain spaces
-		// If the user types: "sendmsg user1 hello there"
-		// target should be "user1" 
-		// and the message should be "hello there"
-
-		// if no argument is specified, you should print the following
-		// printf("sendmsg: you have to specify target user\n");
-		// if no message is specified, you should print the followingA
- 		// printf("sendmsg: you have to enter a message\n");
-        char *target = strtok(NULL, " ");
-        if (!target) {
-            printf("sendmsg: you have to specify target user\n");
-            continue;
-        }
-
-        char *msg = strtok(NULL, "");
-        if (!msg) {
-            printf("sendmsg: you have to enter a message\n");
-            continue;
-        }
-
-        // Call sendmsg function to send the message
-        sendmsg(uName, target, msg);
+	        char *target = strtok(NULL, " ");
+	        if (!target) {
+	            printf("sendmsg: you have to specify target user\n");
+	            continue;
+	        }
+	
+	        char *msg = strtok(NULL, "");
+	        if (!msg) {
+	            printf("sendmsg: you have to enter a message\n");
+	            continue;
+	        }
+	
+	        sendmsg(uName, target, msg);
+		
 		continue;
 	}
 
