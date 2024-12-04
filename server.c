@@ -1,57 +1,37 @@
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
-#include <signal.h>
-
-struct message {
-	char source[50];
-	char target[50]; 
-	char msg[200]; // message body
-};
-
-void terminate(int sig) {
-	printf("Exiting....\n");
-	fflush(stdout);
-	exit(0);
-}
-
 int main() {
-	int server;
-	int target;
-	int dummyfd;
-	struct message req;
-	signal(SIGPIPE,SIG_IGN);
-	signal(SIGINT,terminate);
-	server = open("serverFIFO",O_RDONLY);
-	dummyfd = open("serverFIFO",O_WRONLY);
+    int serverFIFO, targetFIFO;
+    struct message req;
 
-	while (1) {
-		// TODO:
-		// read requests from serverFIFO
+    // Open server FIFO for reading and dummy file descriptor for writing
+    serverFIFO = open("serverFIFO", O_RDONLY);
+    if (serverFIFO == -1) {
+        perror("Failed to open serverFIFO");
+        exit(1);
+    }
 
+    while (1) {
+        // Read the message request from server FIFO
+        int bytesRead = read(serverFIFO, &req, sizeof(req));
+        if (bytesRead > 0) {
+            // Print the message details
+            printf("Received a request from %s to send the message %s to %s.\n", req.source, req.msg, req.target);
 
+            // Open the target user's FIFO for writing the message
+            targetFIFO = open(req.target, O_WRONLY);
+            if (targetFIFO == -1) {
+                perror("Failed to open target user's FIFO");
+                continue;
+            }
 
+            // Write the message to the target FIFO
+            write(targetFIFO, &req, sizeof(req));
 
+            // Close the target FIFO after writing the message
+            close(targetFIFO);
+        }
+    }
 
-
-		printf("Received a request from %s to send the message %s to %s.\n",req.source,req.msg,req.target);
-
-		// TODO:
-		// open target FIFO and write the whole message struct to the target FIFO
-		// close target FIFO after writing the message
-
-
-
-
-
-
-
-	}
-	close(server);
-	close(dummyfd);
-	return 0;
+    // Close the server FIFO when done
+    close(serverFIFO);
+    return 0;
 }
-
